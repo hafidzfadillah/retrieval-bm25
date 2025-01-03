@@ -4,11 +4,11 @@ from collections import Counter # Menggunakan Counter untuk menghitung frekuensi
 
 class TextProcessor:
     def __init__(self):
-        self.kamus = self.load_kamus()
-        self.stopwords = self.get_stopwords()
+        self.kamus = self.load_kamus() # inisialisasi kata dasar dari kamus.txt
+        self.stopwords = self.get_stopwords() # inisialisasi stopword list
 
+    # Memuat kamus kata dasar dari file files/kamuss.txt
     def load_kamus(self):
-        # Memuat kamus kata dasar dari file files/kamuss.txt
         try:
             with open('files/kamuss.txt', 'r', encoding='utf-8') as file:
                 return {line.strip() for line in file if line.strip()}
@@ -16,8 +16,8 @@ class TextProcessor:
             print(f"Error membaca kamus: {e}")
             return set()
 
+    # Memuat daftar stopword dari file dan mengembalikan dalam bentuk set
     def get_stopwords(self):
-        # Memuat daftar stopword dari file dan mengembalikan dalam bentuk set
         try:
             with open('files/stopwordbahasa.xls', 'r', encoding='utf-8') as file:
                 stopwords = {line.strip() for line in file if line.strip()}
@@ -26,14 +26,15 @@ class TextProcessor:
             print(f"Error membaca file stopwords: {e}")
             return set()
 
-    
+    # function untuk cleaning teks
     def clean_text(self, text):
-        content = text.lower() # 
+        content = text.lower() # ubah setiap karakter menjadi lowercase
         content = ' '.join(content.split())  # Menghapus spasi berlebih
         content = re.sub(r'http\S+|www\S+|\.|\,', '', content) # Menghapus URL, HTTP, koma, dan titik
-        content = re.sub(r'[^a-zA-Z\s]', '', content)
+        content = re.sub(r'[^a-zA-Z\s]', '', content) # mengeliminasi karakter non-huruf
         return content
     
+    # function untuk proses tokenisasi
     def tokenizing(self,text):
         try:
             tokens = nltk.word_tokenize(text)
@@ -42,6 +43,7 @@ class TextProcessor:
             print(f"Error dalam tokenisasi: {e}")
             return []
     
+    # function stopword removal
     def stopword_removal(self, tokens):
         """Remove stopwords from token list"""
         if not isinstance(tokens, list):
@@ -49,8 +51,8 @@ class TextProcessor:
             return []
         return [token for token in tokens if token not in self.stopwords]
 
-    def cek_kata_dasar(self,kata):
-        # Mengecek apakah kata ada dalam kamus kata dasar
+    # Mengecek apakah kata ada dalam kamus kata dasar
+    def cek_kata_dasar(self, kata):
         if self.kamus is None:
             self.kamus = self.load_kamus()
         return kata in self.kamus

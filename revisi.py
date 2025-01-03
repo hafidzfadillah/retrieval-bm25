@@ -81,7 +81,10 @@ class InformationRetrievalApp:
         idf_values = {}
         for term in query_terms:
             df = sum(1 for doc_terms in document_terms if term in doc_terms)
-            idf_values[term] = math.log((len(document_terms) - df + 0.5) / (df + 0.5) + 1.0)
+            if df == 0:
+                idf_values[term] = 0
+            else:
+                idf_values[term] = math.log((len(document_terms) - df) / (df))
 
         print(f'Nilai IDF: {idf_values}')
 
@@ -163,6 +166,8 @@ class InformationRetrievalApp:
 
     # function menghitung rata-rata panjang dokumen
     def calculate_average_document_length(self,files):
+        for file in files:
+            print(f'Panjang dokumen: {len(self.read_file(file).split())}')
         total_words = sum(len(self.read_file(file).split()) for file in files)
         return total_words / len(files)
 
@@ -215,7 +220,7 @@ class InformationRetrievalApp:
             self.result_text.insert(tk.END, f"Menampilkan {len(result_files)} hasil\n")
             self.result_text.insert(tk.END, f"=====================================\n")
             for rank, (file, score) in enumerate(result_files, start=1):
-                if score > 0:
+                # if score > 0:
                     self.result_text.insert(tk.END, f"Rank {rank}: {os.path.basename(file)} (Similarity Score: {score:.4f})\n")
         # jika tidak
         else:
