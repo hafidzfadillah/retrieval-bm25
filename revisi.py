@@ -1,21 +1,20 @@
-# library tampilan
+# library untuk gui
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import scrolledtext
-# from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
-import os # baca folder, file
-import math # buat perhitungan
-from collections import Counter # counter/ngitung
-from docx import Document #baca file docx
-from PyPDF2 import PdfReader # baca file pdf
-import text_processor 
+
+import os # baca folder dan file
+import math # untuk perhitungan
+from collections import Counter # untuk menghitungkan kemunculan kata
+from docx import Document # read file docx
+from PyPDF2 import PdfReader # read file pdf
+import text_processor  # memanggil class TextProcessor
 
 class InformationRetrievalApp:
     def __init__(self, master):
         self.master = master
-        # create stemmer
-        # factory = StemmerFactory()
-        # self.stemmer = factory.create_stemmer()
+        
+        # inisialisasi variabel untuk memanggil function preprocessing
         self.text_processor = text_processor.TextProcessor()
 
         self.directory_label = tk.Label(master, text="Select Directory:")
@@ -60,17 +59,15 @@ class InformationRetrievalApp:
     def sort_files_by_bm25_scores(self,scores):
         return sorted(scores, key=lambda x: x[1], reverse=True)
 
+    # function untuk mengecek keterkaitan antara teks dokumen dan query
     def filter_document_terms(self, query_terms, document_terms):
         return [term for term in document_terms if term in query_terms]
 
     # function untuk proses perhitungan skor BM25
     def calculate_bm25(self, query, document, document_length, average_document_length, k1=1.5, b=0.75):
         # Splitting / memecah query dan document menjadi bentuk "terms"
-        print(f'query:{query}')
         query_terms = self.text_processor.process_text(text=query)
         document_terms = self.text_processor.process_text(text=document)
-        # document_terms = [self.perform_stemming(term) for term in document.lower().split()]
-        # document_terms = self.filter_document_terms(query_terms,doc_terms)
 
         # Menghitung jumlah kemunculan setiap terms
         term_freqs = Counter(document_terms)
@@ -78,9 +75,6 @@ class InformationRetrievalApp:
         for word, count in sorted(term_freqs.items(), key=lambda x: x[1], reverse=True):
             if count > 1:
                 print(f"Kata {word} sebanyak {count} kata\n")
-
-        # print(f'Term Frequency: {term_freqs}')
-        # print(f'Terms: {document_terms}')
 
         # Proses perhitungan nilai IDF untuk setiap term pada query
         # untuk mengukur seberapa jarang kemunculan suatu term pada dokumen
@@ -107,7 +101,7 @@ class InformationRetrievalApp:
 
     # menghitung skor BM25 untuk masing masing file
     def calculate_bm25_score(self, query, file, average_document_length, k1=1.5, b=0.75):
-        document_length = len(self.read_file(file).split())
+        document_length = len(self.read_file(file).split()) # panjang dokumen
         print(f'\nNama File: {file}')
         return self.calculate_bm25(query, self.read_file(file), document_length, average_document_length, k1, b)
 
@@ -116,13 +110,8 @@ class InformationRetrievalApp:
         scores = [(file, self.calculate_bm25_score(query, file, average_document_length)) for file in files]
         return scores
 
-    # def perform_stemming(self, text):
-    #     # return ' '.join(self.stemmer.stem(word) for word in text.split())
-    #     stemmed = self.stemmer.stem_kata(text)
-    #     return stemmed
-
+    # Membaca dan mengekstrak teks dari file PDF
     def read_pdf(self,file_path):
-        # Membaca dan mengekstrak teks dari file PDF
         try:
             reader = PdfReader(file_path) 
             text = ""
@@ -133,8 +122,8 @@ class InformationRetrievalApp:
             print(f"Error membaca PDF {file_path}: {e}")
             return ""
 
+    # Membaca dan mengekstrak teks dari file DOCX
     def read_docx(self,file_path):
-        # Membaca dan mengekstrak teks dari file DOCX
         try:
             doc = Document(file_path)
             text = ""
@@ -145,6 +134,7 @@ class InformationRetrievalApp:
             print(f"Error membaca DOCX {file_path}: {e}")
             return ""
 
+    # Membaca dan mengekstrak teks dari file TXT
     def read_txt(self,file_path):
         # Membaca dan mengekstrak teks dari file TXT
         try:
@@ -171,12 +161,13 @@ class InformationRetrievalApp:
             print('Ekstensi file tidak dikenal')
             return ''
 
+    # function menghitung rata-rata panjang dokumen
     def calculate_average_document_length(self,files):
-        # hitung rata-rata panjang dokumen
         total_words = sum(len(self.read_file(file).split()) for file in files)
         return total_words / len(files)
 
-    def search_files_with_bm25(self,query, files):
+    # function proses temu balik informasi
+    def search_files_with_bm25(self, query, files):
         # Hitung rata-rata panjang dokumen/file
         average_document_length = self.calculate_average_document_length(files)
         print(f'Rata-rata panjang dokumen: {average_document_length}')
@@ -189,6 +180,7 @@ class InformationRetrievalApp:
 
         return sorted_files
 
+    # function proses pencarian, pembacaan, dan temu balik informasi
     def perform_search(self):
         directory_path = self.directory_var.get() # ambil nama folder
         query = self.query_var.get() # ambil nilai query

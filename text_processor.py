@@ -1,4 +1,4 @@
-import re
+import re # library regular expression
 import nltk # Menggunakan nltk untuk tokenisasi teks
 from collections import Counter # Menggunakan Counter untuk menghitung frekuensi kata
 
@@ -28,7 +28,7 @@ class TextProcessor:
 
     
     def clean_text(self, text):
-        content = text.lower()
+        content = text.lower() # 
         content = ' '.join(content.split())  # Menghapus spasi berlebih
         content = re.sub(r'http\S+|www\S+|\.|\,', '', content) # Menghapus URL, HTTP, koma, dan titik
         content = re.sub(r'[^a-zA-Z\s]', '', content)
@@ -178,16 +178,10 @@ class TextProcessor:
         return ' '.join(hasil_stemming)
     
     def process_text(self, text):
-        content = self.clean_text(text)
-        tokens = self.tokenizing(content)
-        filtered_tokens = self.stopword_removal(tokens)
-        stemmed_tokens = [self.stem_kata(token) for token in filtered_tokens] 
-        print(str(stemmed_tokens))
+        content = self.clean_text(text) # proses cleaning text
+        tokens = self.tokenizing(content) # proses tokenisasi
+        filtered_tokens = self.stopword_removal(tokens) # proses stopword removal
+        stemmed_tokens = [self.stem_kata(token) for token in filtered_tokens]  # proses stemming
+        print(str(stemmed_tokens)) # menampilkan hasil pre-processing
 
-        # return ' '.join(stemmed_tokens)
         return stemmed_tokens
-
-        # word_freq = Counter(stemmed_tokens)
-        # print("\n\n=== Word Frequencies ===\n")
-        # for word, count in sorted(word_freq.items(), key=lambda x: x[1], reverse=True):
-        #     print(f"Kata {word} sebanyak {count} kata\n")
