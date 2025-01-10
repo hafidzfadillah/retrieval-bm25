@@ -59,59 +59,9 @@ class InformationRetrievalApp:
     def sort_files_by_bm25_scores(self,scores):
         return sorted(scores, key=lambda x: x[1], reverse=True)
 
-    # function untuk mengecek keterkaitan antara teks dokumen dan query
-    def filter_document_terms(self, query_terms, document_terms):
-        return [term for term in document_terms if term in query_terms]
-
-    # function untuk proses perhitungan skor BM25
-    def calculate_bm25(self, query, document, document_length, average_document_length, k1=1.5, b=0.75):
-        # Splitting / memecah query dan document menjadi bentuk "terms"
-        query_terms = self.text_processor.process_text(text=query)
-        document_terms = self.text_processor.process_text(text=document)
-
-        # Menghitung jumlah kemunculan setiap terms
-        term_freqs = Counter(document_terms)
-        
-        for word, count in sorted(term_freqs.items(), key=lambda x: x[1], reverse=True):
-            if count > 1:
-                print(f"Kata {word} sebanyak {count} kata\n")
-
-        # Proses perhitungan nilai IDF untuk setiap term pada query
-        # untuk mengukur seberapa jarang kemunculan suatu term pada dokumen
-        idf_values = {}
-        for term in query_terms:
-            df = sum(1 for doc_terms in document_terms if term in doc_terms)
-            if df == 0:
-                idf_values[term] = 0
-            else:
-                idf_values[term] = math.log((len(document_terms) - df) / (df))
-
-        print(f'Nilai IDF: {idf_values}')
-
-        # Proses perhitungan skor BM25 untuk setiap term
-        bm25_scores = []
-        for term in query_terms:
-            tf = term_freqs[term]
-            numerator = tf * (k1 + 1)
-            denominator = tf + k1 * (1 - b + b * (document_length / average_document_length))
-            bm25_scores.append(idf_values[term] * numerator / denominator)
-
-        print(f'Skor BM25: {bm25_scores}')
-
-        # Mengembalikan jumlah skor BM25 untuk setiap term,
-        # yang mengukur relevansi antara query dan dokumen/file
-        return sum(bm25_scores)
-
-    # menghitung skor BM25 untuk masing masing file
-    def calculate_bm25_score(self, query, file, average_document_length, k1=1.5, b=0.75):
-        document_length = len(self.read_file(file).split()) # panjang dokumen
-        print(f'\nNama File: {file}')
-        return self.calculate_bm25(query, self.read_file(file), document_length, average_document_length, k1, b)
-
-    # menampung hasil perhitungan skor BM25 untuk setiap file
-    def calculate_bm25_scores(self,query, files, average_document_length):
-        scores = [(file, self.calculate_bm25_score(query, file, average_document_length)) for file in files]
-        return scores
+    # # function untuk mengecek keterkaitan antara teks dokumen dan query
+    # def filter_document_terms(self, query_terms, document_terms):
+    #     return [term for term in document_terms if term in query_terms]
 
     # Membaca dan mengekstrak teks dari file PDF
     def read_pdf(self,file_path):
@@ -164,6 +114,58 @@ class InformationRetrievalApp:
             print('Ekstensi file tidak dikenal')
             return ''
 
+    # function untuk proses perhitungan skor BM25
+    def calculate_bm25(self, query, document, document_length, average_document_length, k1=1.5, b=0.75):
+        # Splitting / memecah query dan document menjadi bentuk "terms"
+        query_terms = self.text_processor.process_text(text=query)
+        document_terms = self.text_processor.process_text(text=document)
+
+        # Menghitung jumlah kemunculan setiap terms
+        term_freqs = Counter(document_terms)
+        
+        for word, count in sorted(term_freqs.items(), key=lambda x: x[1], reverse=True):
+            if count > 1:
+                print(f"Kata {word} sebanyak {count} kata\n")
+
+        # Proses perhitungan nilai IDF untuk setiap term pada query
+        # untuk mengukur seberapa jarang kemunculan suatu term pada dokumen
+        idf_values = {}
+        bm25_scores = []
+        for term in query_terms:
+            df = sum(1 for doc_terms in document_terms if term in doc_terms)
+            # df = sum(1 for doc in self.documents if term in self.text_processor.process_text(text=self.read_file(doc)))
+            N = len(self.documents)
+
+            if df == 0:
+                # idf_values[term] = 0
+                idf_values[term] = math.log((N + 0.5) / 0.5)  # Smoothing
+            else:
+                # idf_values[term] = math.log((len(document_terms) - df) / (df))
+                idf_values[term] = math.log((N - df + 0.5) / (df + 0.5)) + 1
+
+            tf = term_freqs[term]
+            numerator = tf * (k1 + 1)
+            denominator = tf + k1 * (1 - b + b * document_length / average_document_length)
+            bm25_scores.append(idf_values[term] * numerator / denominator)
+
+        print(f'Nilai IDF: {idf_values}')
+        print(f'Skor BM25: {sum(bm25_scores)}')    
+
+        # Mengembalikan jumlah skor BM25 untuk setiap term,
+        # yang mengukur relevansi antara query dan dokumen/file
+        return sum(bm25_scores)
+
+    # menghitung skor BM25 untuk masing masing file
+    def calculate_bm25_score(self, query, file, average_document_length, k1=1.5, b=0.75):
+        document_length = len(self.read_file(file).split()) # panjang dokumen
+        print(f'\nNama File: {file}')
+        return self.calculate_bm25(query, self.read_file(file), document_length, average_document_length, k1, b)
+
+    # menampung hasil perhitungan skor BM25 untuk setiap file
+    def calculate_bm25_scores(self,query, files, average_document_length):
+        scores = [(file, self.calculate_bm25_score(query, file, average_document_length)) for file in files]
+        return scores
+
     # function menghitung rata-rata panjang dokumen
     def calculate_average_document_length(self,files):
         for file in files:
@@ -199,6 +201,7 @@ class InformationRetrievalApp:
         # menampung semua file pada folder dalam suatu list
         files = [os.path.join(directory_path, filename) for filename in os.listdir(directory_path) if
                  os.path.isfile(os.path.join(directory_path, filename))]
+        self.documents = files
 
         self.list_file.insert(tk.END, f"Jumlah dokumen pada folder={len(files)}\n")
         self.list_file.insert(tk.END, "========================================\n")

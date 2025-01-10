@@ -182,8 +182,10 @@ class TextProcessor:
     def process_text(self, text):
         content = self.clean_text(text) # proses cleaning text
         tokens = self.tokenizing(content) # proses tokenisasi
+        print(f"Tokenisasi: {tokens}")
         filtered_tokens = self.stopword_removal(tokens) # proses stopword removal
+        print(f'Stopword removal: {filtered_tokens}')
         stemmed_tokens = [self.stem_kata(token) for token in filtered_tokens]  # proses stemming
-        print(str(stemmed_tokens)) # menampilkan hasil pre-processing
+        print(f'Stemming: {stemmed_tokens}') # menampilkan hasil pre-processing
 
         return stemmed_tokens
