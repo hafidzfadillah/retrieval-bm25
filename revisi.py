@@ -59,9 +59,12 @@ class InformationRetrievalApp:
     def sort_files_by_bm25_scores(self,scores):
         return sorted(scores, key=lambda x: x[1], reverse=True)
 
-    # function untuk mengecek keterkaitan antara teks dokumen dan query
-    def filter_document_terms(self, query_terms, document_terms):
-        return [term for term in document_terms if term in query_terms]
+    # Cache dokumen setelah preprocessing
+    def preprocess_documents(self, files):
+        self.processed_documents = {
+            file: self.text_processor.process_text(self.read_file(file))
+            for file in files
+        }
 
     # function untuk proses perhitungan skor BM25
     def calculate_bm25(self, query, document, document_length, average_document_length, k1=1.5, b=0.75):
@@ -76,27 +79,34 @@ class InformationRetrievalApp:
             if count > 1:
                 print(f"Kata {word} sebanyak {count} kata\n")
 
-        # Proses perhitungan nilai IDF untuk setiap term pada query
-        # untuk mengukur seberapa jarang kemunculan suatu term pada dokumen
+        
         idf_values = {}
+        bm25_scores = []
+        N = len(self.documents)
+
         for term in query_terms:
-            df = sum(1 for doc_terms in document_terms if term in doc_terms)
-            if df == 0:
+            # Proses perhitungan nilai IDF untuk setiap term pada query
+            # untuk mengukur seberapa jarang kemunculan suatu term pada dokumen
+            n_q = sum(1 for doc_terms in self.processed_documents.values() if term in doc_terms)
+            print(f'N:{N}')
+            print(f'n_q:{n_q}')
+            
+            if n_q == 0:
                 idf_values[term] = 0
             else:
-                idf_values[term] = math.log((len(document_terms) - df) / (df))
+                idf_values[term] = math.log(((N - n_q + 0.5) / (n_q + 0.5))+1)
 
-        print(f'Nilai IDF: {idf_values}')
+            print(f'pjg doc: {len(document_terms)}')
+            print(f'avg pjg doc: {average_document_length}')
 
-        # Proses perhitungan skor BM25 untuk setiap term
-        bm25_scores = []
-        for term in query_terms:
+            # Proses perhitungan skor BM25
             tf = term_freqs[term]
             numerator = tf * (k1 + 1)
-            denominator = tf + k1 * (1 - b + b * (document_length / average_document_length))
+            denominator = tf + k1 * (1 - b + b * (len(document_terms) / average_document_length))
             bm25_scores.append(idf_values[term] * numerator / denominator)
 
-        print(f'Skor BM25: {bm25_scores}')
+        print(f'Nilai IDF: {idf_values}')
+        print(f'Skor BM25: {sum(bm25_scores)}')
 
         # Mengembalikan jumlah skor BM25 untuk setiap term,
         # yang mengukur relevansi antara query dan dokumen/file
@@ -165,16 +175,14 @@ class InformationRetrievalApp:
             return ''
 
     # function menghitung rata-rata panjang dokumen
-    def calculate_average_document_length(self,files):
-        for file in files:
-            print(f'Panjang dokumen: {len(self.read_file(file).split())}')
-        total_words = sum(len(self.read_file(file).split()) for file in files)
-        return total_words / len(files)
+    def calculate_average_document_length(self):
+        total_words = sum(len(doc) for doc in self.processed_documents.values())
+        return total_words / len(self.processed_documents)
 
     # function proses temu balik informasi
     def search_files_with_bm25(self, query, files):
         # Hitung rata-rata panjang dokumen/file
-        average_document_length = self.calculate_average_document_length(files)
+        average_document_length = self.calculate_average_document_length()
         print(f'Rata-rata panjang dokumen: {average_document_length}')
 
         # Hitung skor BM25
@@ -199,7 +207,11 @@ class InformationRetrievalApp:
         # menampung semua file pada folder dalam suatu list
         files = [os.path.join(directory_path, filename) for filename in os.listdir(directory_path) if
                  os.path.isfile(os.path.join(directory_path, filename))]
+        self.documents = files
+        # Preprocess semua dokumen
+        self.preprocess_documents(files)
 
+        self.list_file.delete(1.0,tk.END)
         self.list_file.insert(tk.END, f"Jumlah dokumen pada folder={len(files)}\n")
         self.list_file.insert(tk.END, "========================================\n")
 
@@ -220,7 +232,6 @@ class InformationRetrievalApp:
             self.result_text.insert(tk.END, f"Menampilkan {len(result_files)} hasil\n")
             self.result_text.insert(tk.END, f"=====================================\n")
             for rank, (file, score) in enumerate(result_files, start=1):
-                # if score > 0:
                     self.result_text.insert(tk.END, f"Rank {rank}: {os.path.basename(file)} (Similarity Score: {score:.4f})\n")
         # jika tidak
         else:

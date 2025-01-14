@@ -1,21 +1,21 @@
 import matplotlib.pyplot as plt
 
-# Define the values for BM25 calculations for three documents
+# # Define the values for BM25 calculations for three documents
 doc_values = {
     "Document 1": {
-        "doc_length": 14,
+        "doc_length": 6,
         "bahasa_freq": 0,
         "pemrograman_freq": 2,
-        "score": 2.62
+        "score": 1.2597
     },
     "Document 2": {
-        "doc_length": 15,
+        "doc_length": 10,
         "bahasa_freq": 1,
         "pemrograman_freq": 1,
-        "score": 4.1034
+        "score": 1.0440
     },
     "Document 3": {
-        "doc_length": 14,
+        "doc_length": 8,
         "bahasa_freq": 0,
         "pemrograman_freq": 0,
         "score": 0.0
@@ -28,8 +28,8 @@ fig, ax = plt.subplots(figsize=(12, 4))
 # Render each document calculation
 for i, (doc, values) in enumerate(doc_values.items()):
     text = f"{doc}:\n" \
-           f"BM25 = Σ [ IDF(bahasa) × ( {values['bahasa_freq']} × (1.5 + 1) ) / ({values['bahasa_freq']} + 1.5 × (1 - 0.75 + 0.75 × {values['doc_length']}/14.3334)) ]\n" \
-           f"      + IDF(pemrograman) × ( {values['pemrograman_freq']} × (1.5 + 1) ) / ({values['pemrograman_freq']} + 1.5 × (1 - 0.75 + 0.75 × {values['doc_length']}/14.3334))\n" \
+           f"BM25 = Σ [ 0.47 × ( {values['bahasa_freq']} × (1.5 + 1) ) / ({values['bahasa_freq']} + 1.5 × (1 - 0.75 + 0.75 × {values['doc_length']}/8)) ]\n" \
+           f"      + 0.47 × ( {values['pemrograman_freq']} × (1.5 + 1) ) / ({values['pemrograman_freq']} + 1.5 × (1 - 0.75 + 0.75 × {values['doc_length']}/8))\n" \
            f"Score = {values['score']}"
     ax.text(0.5, 1 - i * 0.35, text, fontsize=10, va='top', ha='center', wrap=True)
 
